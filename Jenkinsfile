@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_IMAGE = "tour-project"
         CONTAINER_NAME = "tour_project_web"
-        HOST_PORT = "" // will be set dynamically
+        PORT = "8081" // Fixed host port
     }
 
     stages {
@@ -37,21 +37,10 @@ pipeline {
             }
         }
 
-        stage('Select Free Port') {
-            steps {
-                script {
-                    // Pick a free port starting from 8080
-                    HOST_PORT = sh(script: "for p in {8080..8099}; do lsof -i:$p || echo $p; done | grep -E '^[0-9]{1,5}$' | head -n1", returnStdout: true).trim()
-                    echo "Selected host port: ${HOST_PORT}"
-                    env.HOST_PORT = HOST_PORT
-                }
-            }
-        }
-
         stage('Run Docker Container') {
             steps {
-                echo "Running Docker container ${CONTAINER_NAME} on port ${HOST_PORT}"
-                sh "docker run -d -p ${HOST_PORT}:80 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
+                echo "Running Docker container ${CONTAINER_NAME} on port ${PORT}"
+                sh "docker run -d -p ${PORT}:80 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
             }
         }
 
@@ -65,10 +54,4 @@ pipeline {
 
     post {
         success {
-            echo "Deployment completed successfully! Visit http://<YOUR_SERVER_IP>:${HOST_PORT}"
-        }
-        failure {
-            echo "Deployment failed. Check the Jenkins console output for errors."
-        }
-    }
-}
+            echo "Deployment completed successfully! Visit http://<YOUR_SERVER_IP>:$
