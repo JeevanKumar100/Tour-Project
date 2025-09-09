@@ -54,4 +54,10 @@ pipeline {
 
     post {
         success {
-            echo "Deployment completed successfully! Visit http://<YOUR_SERVER_IP>:$
+            echo "Deployment completed successfully! Visit http://18.118.18.22:${PORT}"
+        }
+        failure {
+            echo "Deployment failed. Check the Jenkins console output for errors."
+        }
+    }
+}
