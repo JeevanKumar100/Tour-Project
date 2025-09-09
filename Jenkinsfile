@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = "tour-project"
+        CONTAINER_NAME = "tour_project_web"
+        PORT = "8080"
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
@@ -8,25 +14,50 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Check Workspace') {
             steps {
-                script {
-                    sh 'docker build -t tour-project .'
-                }
+                echo "Listing files in workspace:"
+                sh 'pwd'
+                sh 'ls -l'
             }
         }
 
-        stage('Run Container') {
+        stage('Build Docker Image') {
             steps {
-                script {
-                    // Stop old container if running
-                    sh '''
-                    docker stop tour_project_web || true
-                    docker rm tour_project_web || true
-                    docker run -d -p 8080:80 --name tour_project_web tour-project
-                    '''
-                }
+                echo "Building Docker image ${DOCKER_IMAGE}"
+                sh "docker build -t ${DOCKER_IMAGE} ."
             }
+        }
+
+        stage('Stop Existing Container') {
+            steps {
+                echo "Stopping existing container if it exists"
+                sh "docker stop ${CONTAINER_NAME} || true"
+                sh "docker rm ${CONTAINER_NAME} || true"
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                echo "Running Docker container ${CONTAINER_NAME} on port ${PORT}"
+                sh "docker run -d -p ${PORT}:80 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}"
+            }
+        }
+
+        stage('Clean Up Dangling Images') {
+            steps {
+                echo "Removing dangling Docker images"
+                sh "docker image prune -f"
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment completed successfully! Visit http://<YOUR_SERVER_IP>:${PORT}"
+        }
+        failure {
+            echo "Deployment failed. Check the Jenkins console output for errors."
         }
     }
 }
